@@ -1,0 +1,26 @@
+[
+  {
+    "question": "Посчитай ARPU (Average Revenue Per User) за сентябрь 2026 года",
+    "sql": "SELECT SUM(amount) / COUNT(DISTINCT user_id) AS arpu FROM payments WHERE status = 'success' AND DATE_TRUNC('month', payment_date) = '2026-09-01';"
+  },
+  {
+    "question": "Как распределяется средняя оценка поддержки (satisfaction_score) в зависимости от тарифа пользователя?",
+    "sql": "SELECT u.subscription_plan, ROUND(AVG(t.satisfaction_score), 2) as avg_score, COUNT(t.ticket_id) as total_tickets FROM users u JOIN support_tickets t ON u.user_id = t.user_id WHERE t.satisfaction_score IS NOT NULL GROUP BY u.subscription_plan ORDER BY avg_score DESC;"
+  },
+  {
+    "question": "Покажи DAU (Daily Active Users) за последнюю неделю в разбивке по платформам (ios, android, web).",
+    "sql": "SELECT DATE_TRUNC('day', event_time) AS event_date, platform, COUNT(DISTINCT user_id) AS dau FROM app_events WHERE event_time >= CURRENT_DATE - INTERVAL '7 days' GROUP BY 1, 2 ORDER BY 1, 2;"
+  },
+  {
+    "question": "Найди топ-3 пользователей по сумме успешных платежей за всё время, используя ранжирование.",
+    "sql": "WITH user_revenue AS (SELECT user_id, SUM(amount) as total_revenue FROM payments WHERE status = 'success' GROUP BY user_id), ranked_users AS (SELECT user_id, total_revenue, DENSE_RANK() OVER(ORDER BY total_revenue DESC) as rank FROM user_revenue) SELECT user_id, total_revenue FROM ranked_users WHERE rank <= 3;"
+  },
+  {
+    "question": "Посчитай конверсию из регистрации в первую успешную оплату (в процентах).",
+    "sql": "WITH registered_users AS (SELECT COUNT(DISTINCT user_id) as total_users FROM users), paid_users AS (SELECT COUNT(DISTINCT user_id) as paying_users FROM payments WHERE status = 'success') SELECT ROUND((paid_users.paying_users * 100.0) / registered_users.total_users, 2) AS conversion_rate FROM registered_users, paid_users;"
+  },
+  {
+    "question": "Посчитай суммарную выручку в разбивке по платформам (ios, android, web). Учитывай только успешные платежи.",
+    "sql": "WITH user_platforms AS (SELECT DISTINCT user_id, platform FROM app_events) SELECT up.platform, SUM(p.amount) AS total_revenue FROM payments p JOIN user_platforms up ON p.user_id = up.user_id WHERE p.status = 'success' GROUP BY up.platform;"
+  }
+]
